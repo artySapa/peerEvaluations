@@ -1,0 +1,11 @@
+{
+    "name": "peer-evaluation-app",
+    "version": "1.0.0",
+    "scripts": {
+      "build": "node inject-env.js && echo 'Build completed'",
+      "start": "serve ."
+    },
+    "devDependencies": {
+      "serve": "^14.0.1"
+    }
+  }

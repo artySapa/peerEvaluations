@@ -306,7 +306,7 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
+    <script src="./public/env-config.js"></script>
     <script>
         // Google API initialization functions - must be defined before script tags
         function gapiLoaded() {
@@ -417,11 +417,11 @@
         let ratings = [0, 0, 0, 0, 0];
         let allEvaluations = [];
         
-        // Google Drive API настройки - загружаются из config.js
-        const CLIENT_ID = CONFIG.CLIENT_ID;
-        const API_KEY = CONFIG.API_KEY;
-        const SCOPES = CONFIG.SCOPES;
-        const FOLDER_ID = CONFIG.FOLDER_ID;
+        // Google Drive API настройки - загружаются из env-config.js
+        const CLIENT_ID = window.env.CLIENT_ID;
+        const API_KEY = window.env.API_KEY;
+        const SCOPES = window.env.SCOPES;
+        const FOLDER_ID = window.env.FOLDER_ID;
         let tokenClient;
         let gapiInited = false;
         let gisInited = false;
@@ -1330,11 +1330,6 @@
                     statusDiv.innerHTML = `
                         <div class="alert alert-success">
                             ✅ Загрузка завершена!<br>
-                            <strong>Успешно загружено:</strong> ${loadedCount} оценок из папки Google Drive (ID: ${FOLDER_ID})<br>
-                            ${errorCount > 0 ? `<strong>Ошибок:</strong> ${errorCount}<br>` : ''}
-                            <br>
-                            <small>Поиск выполнен ТОЛЬКО в указанной папке, исключая корзину и другие папки</small><br>
-                            Перейдите на вкладку <strong>"Просмотр"</strong> для просмотра таблицы
                         </div>
                     `;
                     
