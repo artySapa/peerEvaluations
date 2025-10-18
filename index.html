@@ -1624,6 +1624,131 @@
             }
         }
 
+        // Скачивание баллов участия как CSV файл
+        function downloadParticipationCSV() {
+            if (allEvaluations.length === 0) {
+                alert('⚠️ Нет загруженных оценок для расчета баллов участия!\n\nСначала загрузите файлы оценок на вкладке "Импорт/Экспорт" или скачайте их с Google Drive на вкладке "Просмотр".');
+                return;
+            }
+
+            const participationScores = calculateParticipationScores();
+            
+            // Создаем CSV контент
+            let csvContent = 'Студент,Оценок дал,Полнота участия (%),Точность оценок (%),Итоговый балл (%),Статус\n';
+            
+            students.forEach(student => {
+                const score = participationScores[student];
+                const status = score.isInactive ? 'Неактивен' : 'Активен';
+                csvContent += `"${student}",${score.evaluationsCount},${score.completenessScore},${score.accuracyScore},${score.finalScore},"${status}"\n`;
+            });
+            
+            // Создаем и скачиваем файл
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `participation_scores_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Показываем уведомление
+            showNotification('✅ CSV файл с баллами участия скачан!', 'success');
+        }
+
+        // Скачивание баллов участия как Excel файл
+        function downloadParticipationExcel() {
+            if (allEvaluations.length === 0) {
+                alert('⚠️ Нет загруженных оценок для расчета баллов участия!\n\nСначала загрузите файлы оценок на вкладке "Импорт/Экспорт" или скачайте их с Google Drive на вкладке "Просмотр".');
+                return;
+            }
+
+            const participationScores = calculateParticipationScores();
+            
+            // Создаем HTML таблицу для Excel
+            let htmlContent = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+                      xmlns:x="urn:schemas-microsoft-com:office:excel" 
+                      xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="ExcelCreated" content="true">
+                    <!--[if gte mso 9]>
+                    <xml>
+                        <x:ExcelWorkbook>
+                            <x:ExcelWorksheets>
+                                <x:ExcelWorksheet>
+                                    <x:Name>Баллы участия</x:Name>
+                                    <x:WorksheetOptions>
+                                        <x:DefaultRowHeight>285</x:DefaultRowHeight>
+                                    </x:WorksheetOptions>
+                                </x:ExcelWorksheet>
+                            </x:ExcelWorksheets>
+                        </x:ExcelWorkbook>
+                    </xml>
+                    <![endif]-->
+                </head>
+                <body>
+                    <h2>📊 Баллы участия студентов</h2>
+                    <table border="1" cellpadding="5" cellspacing="0">
+                        <tr style="background-color: #2196F3; color: white; font-weight: bold;">
+                            <th>Студент</th>
+                            <th>Оценок дал</th>
+                            <th>Полнота участия (%)</th>
+                            <th>Точность оценок (%)</th>
+                            <th>Итоговый балл (%)</th>
+                            <th>Статус</th>
+                        </tr>
+            `;
+            
+            students.forEach(student => {
+                const score = participationScores[student];
+                const status = score.isInactive ? 'Неактивен' : 'Активен';
+                const rowColor = score.isInactive ? 'background-color: #f5f5f5; opacity: 0.7;' : '';
+                const textColor = score.isInactive ? 'color: #999;' : '';
+                
+                htmlContent += `
+                    <tr style="${rowColor}">
+                        <td style="${textColor}"><strong>${student}</strong></td>
+                        <td style="${textColor}">${score.evaluationsCount}</td>
+                        <td style="${textColor}">${score.completenessScore}%</td>
+                        <td style="${textColor}">${score.accuracyScore}%</td>
+                        <td style="${textColor}"><strong>${score.finalScore}%</strong></td>
+                        <td style="${textColor}">${status}</td>
+                    </tr>
+                `;
+            });
+            
+            htmlContent += `
+                    </table>
+                    <br>
+                    <p><strong>Система баллов участия:</strong></p>
+                    <ul>
+                        <li><strong>Полнота участия (90% веса):</strong> Оценил ли студент всех активных студентов (исключая неактивных)</li>
+                        <li><strong>Точность оценок (10% веса):</strong> Насколько оценки студента соответствуют средним оценкам (±20% = полный балл)</li>
+                        <li><strong>Итоговый балл:</strong> 90% × Полнота + 10% × Точность</li>
+                        <li><strong>Неактивные студенты:</strong> Студенты с 0 оценок получают 0 баллов и не влияют на других</li>
+                    </ul>
+                </body>
+                </html>
+            `;
+            
+            // Создаем и скачиваем файл
+            const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `participation_scores_${new Date().toISOString().split('T')[0]}.xls`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Показываем уведомление
+            showNotification('✅ Excel файл с баллами участия скачан!', 'success');
+        }
+
         // Загрузка файлов с детальной информацией
         function loadFiles() {
             const files = document.getElementById('fileInput').files;
@@ -1992,6 +2117,8 @@
             // Добавляем таблицу баллов участия
             const participationScores = calculateParticipationScores();
             html += '<br><h3>📊 Баллы участия студентов</h3>';
+            html += '<button class="btn btn-info" onclick="downloadParticipationCSV()" style="margin-bottom: 15px; margin-right: 10px;">📥 Скачать баллы участия (CSV)</button>';
+            html += '<button class="btn btn-success" onclick="downloadParticipationExcel()" style="margin-bottom: 15px;">📊 Скачать баллы участия (Excel)</button>';
             html += '<table><tr><th>Студент</th><th>Оценок дал</th><th>Полнота участия</th><th>Точность оценок</th><th>Итоговый балл</th></tr>';
             
             students.forEach(student => {
