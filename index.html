@@ -184,7 +184,7 @@
             <div id="evaluationWarning" style="display: none; margin: 15px 0;"></div>
 
             <div class="section">
-                <h3>Критерий 1: Содержание и полнота анализа (30%)</h3>
+                <h3>Критерий 1: Качество исходных данных и контекста кейса (15%)</h3>
                 <div class="rating-box" id="rating1">
                     <button onclick="rate(1,1)">1</button>
                     <button onclick="rate(1,2)">2</button>
@@ -196,7 +196,7 @@
             </div>
 
             <div class="section">
-                <h3>Критерий 2: Выводы и рекомендации (25%)</h3>
+                <h3>Критерий 2: Глубина анализа проблемы преемственности (30%)</h3>
                 <div class="rating-box" id="rating2">
                     <button onclick="rate(2,1)">1</button>
                     <button onclick="rate(2,2)">2</button>
@@ -208,7 +208,7 @@
             </div>
 
             <div class="section">
-                <h3>Критерий 3: Структура и логика изложения (20%)</h3>
+                <h3>Критерий 3: Применение концепций и инструментов курса (25%)</h3>
                 <div class="rating-box" id="rating3">
                     <button onclick="rate(3,1)">1</button>
                     <button onclick="rate(3,2)">2</button>
@@ -220,7 +220,7 @@
             </div>
 
             <div class="section">
-                <h3>Критерий 4: Качество визуального оформления (15%)</h3>
+                <h3>Критерий 4: Качество и реализуемость рекомендаций (20%)</h3>
                 <div class="rating-box" id="rating4">
                     <button onclick="rate(4,1)">1</button>
                     <button onclick="rate(4,2)">2</button>
@@ -232,7 +232,7 @@
             </div>
 
             <div class="section">
-                <h3>Критерий 5: Умение донести информацию (10%)</h3>
+                <h3>Критерий 5: Структура, аргументация и представление результата (10%)</h3>
                 <div class="rating-box" id="rating5">
                     <button onclick="rate(5,1)">1</button>
                     <button onclick="rate(5,2)">2</button>
@@ -292,13 +292,6 @@
                 <button class="btn btn-primary" onclick="downloadFromGoogleDrive()">📥 Скачать файлы с Google Drive</button>
                 <button class="btn btn-success" onclick="uploadAllToGoogleDrive()" style="margin-top: 10px;">☁️ Загрузить ВСЕ оценки на Google Drive</button>
                 <div id="driveDownloadStatus" style="margin-top: 15px; display: none;"></div>
-            </div>
-            
-            <div class="section">
-                <h3>📊 Баллы участия</h3>
-                <button class="btn btn-info" onclick="uploadParticipationScores()">☁️ Загрузить баллы участия на Google Drive</button>
-                <button class="btn btn-warning" onclick="downloadParticipationScores()" style="margin-top: 10px;">📥 Скачать баллы участия с Google Drive</button>
-                <div id="participationStatus" style="margin-top: 15px; display: none;"></div>
             </div>
             
             <hr style="margin: 30px 0;">
@@ -400,7 +393,7 @@
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <script>
         const students = [
-            "Кудашев Константин",
+           "Кудашев Константин",
             "Земская Ярослава",
             "Степаненко Ярослав",
             "Медведев Роман",
@@ -705,7 +698,7 @@
                 return null;
             }
 
-            const total = (ratings[0]/5*30 + ratings[1]/5*25 + ratings[2]/5*20 + ratings[3]/5*15 + ratings[4]/5*10).toFixed(1);
+            const total = (ratings[0]/5*15 + ratings[1]/5*30 + ratings[2]/5*25 + ratings[3]/5*20 + ratings[4]/5*10).toFixed(1);
 
             return {
                 evaluated: evaluated,
@@ -1384,367 +1377,6 @@
             }
         }
 
-        // Загрузка баллов участия на Google Drive
-        async function uploadParticipationScores() {
-            const statusDiv = document.getElementById('participationStatus');
-            statusDiv.style.display = 'block';
-            
-            // Проверка инициализации API
-            if (!checkGoogleAPIStatus()) {
-                statusDiv.innerHTML = `
-                    <div class="alert alert-info">
-                        <strong>⏳ Инициализация Google Drive API...</strong><br><br>
-                        Пожалуйста, подождите несколько секунд для загрузки Google API.
-                    </div>
-                `;
-                return;
-            }
-
-            if (allEvaluations.length === 0) {
-                statusDiv.innerHTML = `
-                    <div class="alert alert-info">
-                        📁 Нет загруженных оценок для расчета баллов участия<br><br>
-                        Сначала загрузите файлы оценок на вкладке "Импорт/Экспорт" или скачайте их с Google Drive на вкладке "Просмотр".
-                    </div>
-                `;
-                return;
-            }
-
-            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Подключение к Google Drive...</div>';
-
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    statusDiv.innerHTML = `<div class="alert" style="background: #ffebee;">❌ Ошибка авторизации: ${resp.error}</div>`;
-                    return;
-                }
-
-                try {
-                    const participationScores = calculateParticipationScores();
-                    const currentDate = new Date().toISOString().split('T')[0];
-                    const fileName = `participation_scores_${currentDate}.json`;
-                    
-                    const metadata = {
-                        name: fileName,
-                        mimeType: 'application/json'
-                    };
-
-                    // Check if folder is accessible and set parents
-                    if (FOLDER_ID && FOLDER_ID !== 'default_folder_id') {
-                        try {
-                            await gapi.client.drive.files.get({
-                                fileId: FOLDER_ID
-                            });
-                            metadata.parents = [FOLDER_ID];
-                            console.log('Uploading participation scores to specified folder:', FOLDER_ID);
-                        } catch (error) {
-                            console.log('Folder not accessible, uploading to root directory');
-                        }
-                    }
-
-                    const response = await gapi.client.request({
-                        path: 'https://www.googleapis.com/drive/v3/files',
-                        method: 'POST',
-                        body: {
-                            name: metadata.name,
-                            parents: metadata.parents || [],
-                            mimeType: metadata.mimeType
-                        }
-                    });
-
-                    const fileId = response.result.id;
-
-                    // Upload file content
-                    await gapi.client.request({
-                        path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-                        method: 'PATCH',
-                        params: {
-                            uploadType: 'media'
-                        },
-                        body: JSON.stringify(participationScores, null, 2)
-                    });
-
-                    statusDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            ✅ Баллы участия успешно загружены на Google Drive!<br>
-                            <strong>Имя файла:</strong> ${fileName}<br>
-                            <strong>Студентов:</strong> ${Object.keys(participationScores).length}<br>
-                            <strong>Дата:</strong> ${currentDate}
-                        </div>
-                    `;
-
-                    showNotification(`✅ Баллы участия загружены на Google Drive!`, 'success');
-
-                } catch (err) {
-                    statusDiv.innerHTML = `<div class="alert" style="background: #ffebee;">❌ Ошибка загрузки: ${err.message}</div>`;
-                }
-            };
-
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: ''});
-            }
-        }
-
-        // Скачивание баллов участия с Google Drive
-        async function downloadParticipationScores() {
-            const statusDiv = document.getElementById('participationStatus');
-            statusDiv.style.display = 'block';
-            
-            // Проверка инициализации API
-            if (!checkGoogleAPIStatus()) {
-                statusDiv.innerHTML = `
-                    <div class="alert alert-info">
-                        <strong>⏳ Инициализация Google Drive API...</strong><br><br>
-                        Пожалуйста, подождите несколько секунд для загрузки Google API.
-                    </div>
-                `;
-                return;
-            }
-
-            statusDiv.innerHTML = '<div class="alert alert-info">⏳ Подключение к Google Drive...</div>';
-
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    statusDiv.innerHTML = `<div class="alert" style="background: #ffebee;">❌ Ошибка авторизации: ${resp.error}</div>`;
-                    return;
-                }
-
-                try {
-                    const downloadToken = gapi.client.getToken();
-                    
-                    if (!FOLDER_ID || FOLDER_ID === 'default_folder_id') {
-                        statusDiv.innerHTML = `
-                            <div class="alert alert-warning">
-                                <strong>⚠️ Ошибка конфигурации:</strong><br>
-                                FOLDER_ID не указан в config.js<br>
-                                Пожалуйста, укажите ID папки Google Drive в config.js
-                            </div>
-                        `;
-                        return;
-                    }
-                    
-                    // Поиск файлов баллов участия
-                    let query = `'${FOLDER_ID}' in parents and name contains 'participation_scores_' and mimeType='application/json' and trashed=false`;
-                    
-                    console.log('Searching for participation scores in folder:', FOLDER_ID);
-                    console.log('Query:', query);
-                    
-                    const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,createdTime)&orderBy=createdTime desc`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': 'Bearer ' + downloadToken.access_token
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Failed to list files: ${response.status} ${response.statusText}`);
-                    }
-                    
-                    const result = await response.json();
-                    const files = result.files;
-                    
-                    if (files.length === 0) {
-                        statusDiv.innerHTML = `
-                            <div class="alert alert-info">
-                                📁 Файлы баллов участия не найдены в папке Google Drive (ID: ${FOLDER_ID})<br><br>
-                                Убедитесь, что:<br>
-                                1. Файлы загружены с помощью кнопки "Загрузить баллы участия на Google Drive"<br>
-                                2. Имя файла содержит "participation_scores_"<br>
-                                3. Файлы имеют формат JSON<br>
-                                4. Файлы находятся в указанной папке (ID: ${FOLDER_ID})<br>
-                                5. Файлы не находятся в корзине
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    statusDiv.innerHTML = `<div class="alert alert-info">⏳ Найдено ${files.length} файлов баллов участия. Загрузка...</div>`;
-                    
-                    // Загружаем самый новый файл
-                    const latestFile = files[0];
-                    
-                    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${latestFile.id}?alt=media`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': 'Bearer ' + downloadToken.access_token
-                        }
-                    });
-                    
-                    if (!fileResponse.ok) {
-                        throw new Error(`Failed to download file: ${fileResponse.status} ${fileResponse.statusText}`);
-                    }
-                    
-                    const fileContent = await fileResponse.text();
-                    const participationScores = JSON.parse(fileContent);
-                    
-                    // Создаем CSV для скачивания
-                    let csvContent = 'Студент,Оценок дал,Полнота участия (%),Точность оценок (%),Итоговый балл (%)\n';
-                    
-                    Object.keys(participationScores).forEach(student => {
-                        const score = participationScores[student];
-                        csvContent += `"${student}",${score.evaluationsCount},${score.completenessScore},${score.accuracyScore},${score.finalScore}\n`;
-                    });
-                    
-                    // Скачиваем CSV файл
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    const url = URL.createObjectURL(blob);
-                    link.setAttribute('href', url);
-                    link.setAttribute('download', `participation_scores_${new Date().toISOString().split('T')[0]}.csv`);
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    statusDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            ✅ Баллы участия успешно загружены!<br>
-                            <strong>Файл:</strong> ${latestFile.name}<br>
-                            <strong>Студентов:</strong> ${Object.keys(participationScores).length}<br>
-                            <strong>CSV файл скачан</strong> для просмотра в Excel/Google Sheets
-                        </div>
-                    `;
-                    
-                    showNotification(`✅ Баллы участия загружены и CSV скачан!`, 'success');
-
-                } catch (err) {
-                    statusDiv.innerHTML = `<div class="alert" style="background: #ffebee;">❌ Ошибка загрузки: ${err.message}</div>`;
-                }
-            };
-
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: ''});
-            }
-        }
-
-        // Скачивание баллов участия как CSV файл
-        function downloadParticipationCSV() {
-            if (allEvaluations.length === 0) {
-                alert('⚠️ Нет загруженных оценок для расчета баллов участия!\n\nСначала загрузите файлы оценок на вкладке "Импорт/Экспорт" или скачайте их с Google Drive на вкладке "Просмотр".');
-                return;
-            }
-
-            const participationScores = calculateParticipationScores();
-            
-            // Создаем CSV контент
-            let csvContent = 'Студент,Оценок дал,Полнота участия (%),Точность оценок (%),Итоговый балл (%),Статус\n';
-            
-            students.forEach(student => {
-                const score = participationScores[student];
-                const status = score.isInactive ? 'Неактивен' : 'Активен';
-                csvContent += `"${student}",${score.evaluationsCount},${score.completenessScore},${score.accuracyScore},${score.finalScore},"${status}"\n`;
-            });
-            
-            // Создаем и скачиваем файл
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `participation_scores_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Показываем уведомление
-            showNotification('✅ CSV файл с баллами участия скачан!', 'success');
-        }
-
-        // Скачивание баллов участия как Excel файл
-        function downloadParticipationExcel() {
-            if (allEvaluations.length === 0) {
-                alert('⚠️ Нет загруженных оценок для расчета баллов участия!\n\nСначала загрузите файлы оценок на вкладке "Импорт/Экспорт" или скачайте их с Google Drive на вкладке "Просмотр".');
-                return;
-            }
-
-            const participationScores = calculateParticipationScores();
-            
-            // Создаем HTML таблицу для Excel
-            let htmlContent = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" 
-                      xmlns:x="urn:schemas-microsoft-com:office:excel" 
-                      xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="ExcelCreated" content="true">
-                    <!--[if gte mso 9]>
-                    <xml>
-                        <x:ExcelWorkbook>
-                            <x:ExcelWorksheets>
-                                <x:ExcelWorksheet>
-                                    <x:Name>Баллы участия</x:Name>
-                                    <x:WorksheetOptions>
-                                        <x:DefaultRowHeight>285</x:DefaultRowHeight>
-                                    </x:WorksheetOptions>
-                                </x:ExcelWorksheet>
-                            </x:ExcelWorksheets>
-                        </x:ExcelWorkbook>
-                    </xml>
-                    <![endif]-->
-                </head>
-                <body>
-                    <h2>📊 Баллы участия студентов</h2>
-                    <table border="1" cellpadding="5" cellspacing="0">
-                        <tr style="background-color: #2196F3; color: white; font-weight: bold;">
-                            <th>Студент</th>
-                            <th>Оценок дал</th>
-                            <th>Полнота участия (%)</th>
-                            <th>Точность оценок (%)</th>
-                            <th>Итоговый балл (%)</th>
-                            <th>Статус</th>
-                        </tr>
-            `;
-            
-            students.forEach(student => {
-                const score = participationScores[student];
-                const status = score.isInactive ? 'Неактивен' : 'Активен';
-                const rowColor = score.isInactive ? 'background-color: #f5f5f5; opacity: 0.7;' : '';
-                const textColor = score.isInactive ? 'color: #999;' : '';
-                
-                htmlContent += `
-                    <tr style="${rowColor}">
-                        <td style="${textColor}"><strong>${student}</strong></td>
-                        <td style="${textColor}">${score.evaluationsCount}</td>
-                        <td style="${textColor}">${score.completenessScore}%</td>
-                        <td style="${textColor}">${score.accuracyScore}%</td>
-                        <td style="${textColor}"><strong>${score.finalScore}%</strong></td>
-                        <td style="${textColor}">${status}</td>
-                    </tr>
-                `;
-            });
-            
-            htmlContent += `
-                    </table>
-                    <br>
-                    <p><strong>Система баллов участия:</strong></p>
-                    <ul>
-                        <li><strong>Полнота участия (90% веса):</strong> Оценил ли студент всех активных студентов (исключая неактивных)</li>
-                        <li><strong>Точность оценок (10% веса):</strong> Насколько оценки студента соответствуют средним оценкам (±20% = полный балл)</li>
-                        <li><strong>Итоговый балл:</strong> 90% × Полнота + 10% × Точность</li>
-                        <li><strong>Неактивные студенты:</strong> Студенты с 0 оценок получают 0 баллов и не влияют на других</li>
-                    </ul>
-                </body>
-                </html>
-            `;
-            
-            // Создаем и скачиваем файл
-            const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `participation_scores_${new Date().toISOString().split('T')[0]}.xls`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Показываем уведомление
-            showNotification('✅ Excel файл с баллами участия скачан!', 'success');
-        }
-
         // Загрузка файлов с детальной информацией
         function loadFiles() {
             const files = document.getElementById('fileInput').files;
@@ -1922,24 +1554,19 @@
                 }
             });
             
-            // Рассчитываем средние оценки для каждого студента
+            // Рассчитываем средние оценки для каждого студента (исключая неактивных)
             const averageRatings = {};
             students.forEach(student => {
-                const evaluations = allEvaluations.filter(ev => ev.evaluated === student);
-                if (evaluations.length > 0) {
-                    const totalScore = evaluations.reduce((sum, ev) => {
-                        const score = parseFloat(ev.total);
-                        return sum + (isNaN(score) ? 0 : score);
-                    }, 0);
-                    const average = totalScore / evaluations.length;
-                    averageRatings[student] = isNaN(average) ? 0 : average;
-                } else {
-                    averageRatings[student] = 0;
+                if (!inactiveStudents.has(student)) {
+                    const evaluations = allEvaluations.filter(ev => ev.evaluated === student);
+                    if (evaluations.length > 0) {
+                        const totalScore = evaluations.reduce((sum, ev) => sum + ev.total, 0);
+                        averageRatings[student] = totalScore / evaluations.length;
+                    } else {
+                        averageRatings[student] = 0;
+                    }
                 }
             });
-            
-            // DEBUG: Log average ratings
-            console.log('Average ratings calculated:', averageRatings);
             
             students.forEach(student => {
                 const studentEvals = studentEvaluations[student];
@@ -1964,78 +1591,40 @@
                 // 1. Балл за полноту участия (вес 70%)
                 const completenessScore = Math.min((studentEvals.length / maxPossibleEvaluations) * 100, 100);
                 
-                // 2. Балл за точность оценок (вес 10%)
+                // 2. Балл за точность оценок (вес 30%)
                 let accuracyScore = 0;
                 if (studentEvals.length > 0) {
                     let totalAccuracy = 0;
                     let validComparisons = 0;
                     
-                    // DEBUG: Log for first student only
-                    if (student === students[0]) {
-                        console.log('=== ACCURACY DEBUG ===');
-                        console.log('Student:', student);
-                        console.log('Student evaluations:', studentEvals.length);
-                        console.log('Inactive students:', Array.from(inactiveStudents));
-                        console.log('Average ratings:', averageRatings);
-                    }
-                    
                     studentEvals.forEach(eval => {
                         // Исключаем неактивных студентов из расчета точности
                         if (!inactiveStudents.has(eval.evaluated)) {
                             const averageRating = averageRatings[eval.evaluated];
-                            
-                            // DEBUG: Log for first student only
-                            if (student === students[0]) {
-                                console.log(`Evaluating ${eval.evaluated}: averageRating=${averageRating}, studentRating=${eval.total}`);
-                            }
-                            
-                            if (averageRating && averageRating > 0 && !isNaN(averageRating)) {
-                                const studentRating = parseFloat(eval.total);
-                                if (!isNaN(studentRating)) {
-                                    const percentageDiff = Math.abs((studentRating - averageRating) / averageRating) * 100;
-                                
-                                // DEBUG: Log for first student only
-                                if (student === students[0]) {
-                                    console.log(`Percentage diff: ${percentageDiff}%`);
-                                }
+                            if (averageRating > 0) {
+                                const studentRating = eval.total;
+                                const percentageDiff = Math.abs((studentRating - averageRating) / averageRating) * 100;
                                 
                                 // Если разница в пределах ±20% - полный балл
                                 if (percentageDiff <= 20) {
                                     totalAccuracy += 100;
-                                    if (student === students[0]) console.log('Added 100 (within 20%)');
                                 } else {
                                     // Штраф за большие отклонения
                                     const penalty = Math.min(percentageDiff - 20, 80); // Максимальный штраф 80%
-                                    const score = Math.max(100 - penalty, 0);
-                                    totalAccuracy += score;
-                                    if (student === students[0]) console.log(`Added ${score} (penalty: ${penalty})`);
+                                    totalAccuracy += Math.max(100 - penalty, 0);
                                 }
                                 validComparisons++;
-                                } else {
-                                    if (student === students[0]) console.log(`Skipped: studentRating is NaN`);
-                                }
-                            } else {
-                                if (student === students[0]) console.log(`Skipped: averageRating is ${averageRating}`);
                             }
-                        } else {
-                            if (student === students[0]) console.log(`Skipped ${eval.evaluated}: inactive`);
                         }
                     });
                     
                     if (validComparisons > 0) {
                         accuracyScore = totalAccuracy / validComparisons;
-                        if (student === students[0]) {
-                            console.log(`Final accuracy: ${accuracyScore}% (${totalAccuracy}/${validComparisons})`);
-                        }
-                    } else {
-                        if (student === students[0]) {
-                            console.log('No valid comparisons found');
-                        }
                     }
                 }
                 
-                // Итоговый балл: 90% за полноту + 10% за точность
-                const finalScore = (completenessScore * 0.9) + (accuracyScore * 0.1);
+                // Итоговый балл: 70% за полноту + 30% за точность
+                const finalScore = (completenessScore * 0.7) + (accuracyScore * 0.3);
                 
                 participationScores[student] = {
                     completenessScore: Math.round(completenessScore * 10) / 10,
@@ -2113,8 +1702,6 @@
             // Добавляем таблицу баллов участия
             const participationScores = calculateParticipationScores();
             html += '<br><h3>📊 Баллы участия студентов</h3>';
-            html += '<button class="btn btn-info" onclick="downloadParticipationCSV()" style="margin-bottom: 15px; margin-right: 10px;">📥 Скачать баллы участия (CSV)</button>';
-            html += '<button class="btn btn-success" onclick="downloadParticipationExcel()" style="margin-bottom: 15px;">📊 Скачать баллы участия (Excel)</button>';
             html += '<table><tr><th>Студент</th><th>Оценок дал</th><th>Полнота участия</th><th>Точность оценок</th><th>Итоговый балл</th></tr>';
             
             students.forEach(student => {
@@ -2158,9 +1745,9 @@
             html += `
                 <div class="alert alert-info" style="margin-top: 20px;">
                     <strong>📋 Система баллов участия:</strong><br>
-                    • <strong>Полнота участия (90% веса):</strong> Оценил ли студент всех активных студентов (исключая неактивных)<br>
-                    • <strong>Точность оценок (10% веса):</strong> Насколько оценки студента соответствуют средним оценкам (±20% = полный балл)<br>
-                    • <strong>Итоговый балл:</strong> 90% × Полнота + 10% × Точность<br>
+                    • <strong>Полнота участия (70% веса):</strong> Оценил ли студент всех активных студентов (исключая неактивных)<br>
+                    • <strong>Точность оценок (30% веса):</strong> Насколько оценки студента соответствуют средним оценкам (±20% = полный балл)<br>
+                    • <strong>Итоговый балл:</strong> 70% × Полнота + 30% × Точность<br>
                     • <strong>Неактивные студенты:</strong> Студенты с 0 оценок получают 0 баллов и не влияют на других<br>
                     • <strong>Цветовая индикация:</strong> 🟢 80%+ (отлично) | 🟠 60-79% (хорошо) | 🔴 <60% (требует внимания)
                 </div>
